@@ -1,0 +1,4 @@
+flybrain
+jsbsim
+numpy
+matplotlib
