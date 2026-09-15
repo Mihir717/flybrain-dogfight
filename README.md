@@ -57,6 +57,41 @@ This will:
 - Single residual matrix shared for simplicity; can be per-agent later.
 - 3D viewer is matplotlib (functional but not as polished as Tacview).
 
+## v3 — the brain is the pilot
+
+`fly_dogfight_v3.py` removes the classical pursuit controller and the
+residual-correction framing entirely. Instead, each aircraft is flown by
+**4 frozen fly connectomes with specialized roles**:
+
+- **2 perception brains** ("left eye" / "right eye") — real photoreceptors
+  (`brain.visual` / `brain.azimuth`) are stimulated with a noisy,
+  range-attenuated light bump at the enemy's true bearing. The brain isn't
+  handed the bearing directly; it has to represent "where is it" in the
+  spiking activity of its own `visual_projection` population (which
+  includes the LC4/LPLC2 looming detectors), on its own side.
+- **2 motor brains** (lateral / longitudinal) — receive the perception
+  brains' activity through an evolved encoding matrix onto `ascending_neuron`
+  cells (the real sensory-to-brain relay population), and their `vnc_motor`
+  spiking activity (the fly's literal final motor output) is read through an
+  evolved matrix straight into flight-control commands. Lateral → aileron +
+  rudder. Longitudinal → throttle + elevator, plus its own altitude/speed
+  proprioception.
+
+Only the encode/readout matrices are trained (evolutionary strategy, same
+dopamine-style reward as v2); the connectomes themselves stay frozen. The
+only non-brain code left is a hard ground/stall safety envelope — it
+*overrides*, it never blends with the brain's output, so the brain is
+genuinely making the dogfighting decisions.
+
+```bash
+python fly_dogfight_v3.py
+```
+
+Cost: 8 connectome instances per fight (~6 ms/step each) instead of 2, so
+expect roughly 4x the wall-clock time of v2 per episode. Expect noticeably
+worse early performance than v2 too — real, decoded perception is a harder
+problem than being handed ground-truth bearing.
+
 ## Next priorities
 
 1. True body-frame relative state + closing-rate features
