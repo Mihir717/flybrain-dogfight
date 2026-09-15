@@ -1,51 +1,71 @@
 # FlyBrain Dogfight
 
-Using the complete adult male fruit-fly central nervous system connectome (`flybrain` / MaleCNS) as a frozen spiking reservoir to control simulated fighter jets in 1v1 dogfights.
+Using the complete adult male fruit-fly central nervous system (MaleCNS connectome via the `flybrain` package) as a frozen spiking reservoir to control F-16s in 1v1 dogfights.
 
 ## Goal
 
-- Multiple independent fly brains
-- Learn to stay alive and kill the opponent
-- Proper radar-like sensing, energy management, and pilot-like tactics
-- Strong dopamine / hit-based reward for the readout
-- Live or pre-recorded 3D visualization
+Make multiple independent fly brains learn real pilot-like dogfighting:
+- Stay alive
+- Close range
+- Get nose-on
+- Score gun hits
+- Eventually energy management and advanced tactics
 
-## Current Status (Sep 2026)
+## Architecture (v2)
 
-- Full 166k-neuron connectome runs on CPU (Apple M4 tested)
-- JSBSim F-16 dynamics
-- Evolutionary training of a linear readout on top of the frozen connectome
-- Hit-based ("dopamine") reward shaping
-- Geometry / bearing sign issues still being stabilized (planes sometimes separate instead of closing)
-- 2D and 3D matplotlib visualization prototypes
+1. **Frozen connectome** (166k neurons) – never trained
+2. **Classical pure-pursuit baseline** that is deliberately strong so range decreases
+3. **FlyBrain residual readout** – small linear layer that only adds a correction
+4. **Rich sensory injection** into looming cells (range, bearing)
+5. **Dopamine-style reward** – large positive signal on every gun hit + shaping for closing and nose-on
+6. **Evolutionary training** of the residual only
+7. **Pre-recorded 3D visualization**
 
-## Setup (Mac / Linux)
+## Setup
 
 ```bash
 python -m venv flyjets
-source flyjets/bin/activate   # or Windows equivalent
-pip install flybrain jsbsim numpy matplotlib
+source flyjets/bin/activate
+pip install -r requirements.txt
 ```
 
-First run of `FlyBrain` downloads ~260 MB of connectome data.
+First `FlyBrain()` call downloads ~260 MB of connectome data.
 
-## Key Ideas
+## Run the current best version
 
-- Connectome stays **frozen** (true biological wiring)
-- Only a small linear (or MLP) readout is trained
-- Sensory injection into looming / feature-detector neurons (LC4, LPLC2, etc.)
-- Descending neurons read out to throttle / aileron / elevator / rudder
-- Reward: survival + closing range + nose-on + large bonus for gun hits
+```bash
+python fly_dogfight_v2.py
+```
 
-## Next Steps
+This will:
+- Train the residual readout for a few generations with strong hit rewards
+- Run a final fight while recording trajectories
+- Open a 3D animation of the fight
 
-1. Lock correct body-frame relative geometry and pure-pursuit / PN baseline that reliably closes.
-2. Curriculum: intercept → guns-only merge → energy fight → full tactics.
-3. Stronger residual learning by the flybrain on top of the classical baseline.
-4. Better 3D visualization (or Tacview export).
-5. Multi-agent self-play and population-based training.
+## Design principles taken from real dogfight AI work
+
+- Curriculum / staged difficulty (we start with “just close and shoot”)
+- Strong classical baseline + learned residual (common in successful AlphaDogfight-style systems)
+- Dense shaping + sparse high-value hit reward
+- Body-frame / relative geometry instead of brittle global headings
+- Energy and aspect awareness (partially present, to be expanded)
+
+## Current limitations
+
+- Geometry is still approximate (flat-Earth lon/lat). Further body-frame work will help.
+- Only guns, no missiles yet.
+- Single residual matrix shared for simplicity; can be per-agent later.
+- 3D viewer is matplotlib (functional but not as polished as Tacview).
+
+## Next priorities
+
+1. True body-frame relative state + closing-rate features
+2. Longer curriculum (intercept → guns merge → defensive energy fight)
+3. Population-based / self-play training
+4. Tacview or better 3D export
+5. Missile dynamics and BVR stages
 
 ## License
 
 - Code: MIT
-- Connectome data: MaleCNS v1.0 (CC BY 4.0) from HHMI Janelia / Cambridge / Google Research
+- Connectome: MaleCNS v1.0 (CC BY 4.0) – HHMI Janelia, Cambridge, Google Research
